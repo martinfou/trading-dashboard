@@ -26,6 +26,9 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('trading')" :active="route().current('trading')">
                                     📊 Trading
                                 </NavLink>
+                                <NavLink :href="route('stats')" :active="route().current('stats')">
+                                    📈 Stats
+                                </NavLink>
                             </div>
                         </div>
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
@@ -62,6 +65,9 @@ const showingNavigationDropdown = ref(false);
                 <div class="space-y-1 pb-3 pt-2">
                     <ResponsiveNavLink :href="route('trading')" :active="route().current('trading')">
                         📊 Trading
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink :href="route('stats')" :active="route().current('stats')">
+                        📈 Stats
                     </ResponsiveNavLink>
                 </div>
             </div>
