@@ -492,7 +492,7 @@ const hasOpenTrades = computed(() => props.openTrades?.length > 0);
                             </p>
                             <div class="mt-1 flex justify-between text-[10px] text-gray-500">
                                 <span>A: {{ priceAsk(pair) !== '—' ? Number(priceAsk(pair)).toFixed(5) : '—' }}</span>
-                                <span>Spread: {{ priceSpread(pair) !== '—' ? Number(priceSpread(pair)).toFixed(1) : '—' }}</span>
+                                <span>Spread: {{ priceSpread(pair) !== '—' ? (Number(priceSpread(pair)) * 10000).toFixed(1) + ' pips' : '—' }}</span>
                             </div>
                         </div>
                     </div>

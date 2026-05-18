@@ -26,6 +26,12 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('trading')" :active="route().current('trading')">
                                     📊 Trading
                                 </NavLink>
+                                <NavLink :href="route('trades')" :active="route().current('trades')">
+                                    📋 Trades
+                                </NavLink>
+                                <NavLink :href="route('signals')" :active="route().current('signals')">
+                                    📡 Signaux
+                                </NavLink>
                                 <NavLink :href="route('stats')" :active="route().current('stats')">
                                     📈 Stats
                                 </NavLink>
@@ -65,6 +71,12 @@ const showingNavigationDropdown = ref(false);
                 <div class="space-y-1 pb-3 pt-2">
                     <ResponsiveNavLink :href="route('trading')" :active="route().current('trading')">
                         📊 Trading
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink :href="route('trades')" :active="route().current('trades')">
+                        📋 Trades
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink :href="route('signals')" :active="route().current('signals')">
+                        📡 Signaux
                     </ResponsiveNavLink>
                     <ResponsiveNavLink :href="route('stats')" :active="route().current('stats')">
                         📈 Stats
