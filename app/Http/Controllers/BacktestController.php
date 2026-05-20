@@ -94,51 +94,35 @@ class BacktestController extends Controller
     }
 
     /**
-     * Déclenche un nouveau backtest.
+     * Déclenche un nouveau backtest via le moteur trading-bridge avancé.
+     *
+     * Remplace l'ancien moteur oanda-backtest par BacktestEngine + Monte Carlo
+     * + Walk-Forward + PerformanceMetrics du module trading-bridge.
      */
     public function run()
     {
-        $projectDir = '/home/martinfou/projects/oanda-strategies/mvn-project';
-        $jarPath = $projectDir . '/target/oanda-backtest-1.0.0.jar';
-
-        // Vérifier que le jar existe ou compiler
-        if (!File::exists($jarPath)) {
-            $this->buildMavenProject($projectDir);
-        }
+        $bridgeDir = '/home/martinfou/projects/trading-bridge';
+        $scriptPath = $bridgeDir . '/scripts/dashboard-bridge.sh';
 
         File::ensureDirectoryExists($this->resultsDir);
 
-        // Exécuter le jar
+        if (!File::exists($scriptPath)) {
+            return back()->withErrors(['error' => 'Bridge script introuvable: ' . $scriptPath]);
+        }
+
+        // Exécuter le bridge script avec --sync pour copier dans storage
         $process = new Process([
-            'java', '-jar', $jarPath
-        ], $projectDir, null, null, 300);
+            'bash', $scriptPath, '--sample', '--sync'
+        ], $bridgeDir, null, null, 300);
 
         $process->setTimeout(300);
         $process->run();
 
         if (!$process->isSuccessful()) {
-            return back()->withErrors(['error' => 'Le backtest a échoué: ' . $process->getErrorOutput()]);
-        }
-
-        // Copier les fichiers JSON/HTML dans storage
-        $sourceDir = $projectDir . '/_bmad-output/implementation-artifacts/backtest-reports';
-        if (File::exists($sourceDir)) {
-            foreach (File::files($sourceDir) as $file) {
-                $ext = $file->getExtension();
-                if (in_array($ext, ['json', 'html', 'csv'])) {
-                    File::copy($file->getPathname(), $this->resultsDir . '/' . $file->getFilename());
-                }
-            }
+            return back()->withErrors(['error' => 'Le backtest bridge a échoué: ' . $process->getErrorOutput()]);
         }
 
         return redirect()->route('backtest.index')
-            ->with('success', 'Backtest exécuté et importé avec succès !');
-    }
-
-    private function buildMavenProject(string $projectDir): void
-    {
-        $process = new Process(['mvn', 'clean', 'package', '-DskipTests'], $projectDir, null, null, 180);
-        $process->setTimeout(180);
-        $process->run();
+            ->with('success', 'Backtest exécuté via trading-bridge engine avancé (Monte Carlo + Walk-Forward + Metrics) !');
     }
 }
