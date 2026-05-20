@@ -138,10 +138,10 @@
                     </span>
                   </td>
                   <td class="px-4 py-3 text-right text-gray-300 tabular-nums whitespace-nowrap">
-                    {{ trade.entry_price ? Number(trade.entry_price).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}
+                    {{ trade.entry_price ? Number(trade.entry_price).toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}
                   </td>
                   <td class="px-4 py-3 text-right text-gray-300 tabular-nums whitespace-nowrap">
-                    {{ trade.exit_price ? Number(trade.exit_price).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}
+                    {{ trade.exit_price ? Number(trade.exit_price).toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}
                   </td>
                   <td class="px-4 py-3 text-right tabular-nums whitespace-nowrap font-medium">
                     <span v-if="trade.pnl !== null && trade.pnl !== undefined" :class="trade.pnl >= 0 ? 'text-green-400' : 'text-red-400'">
@@ -199,13 +199,13 @@
                         <!-- Stop loss -->
                         <div>
                           <p class="text-xs font-medium uppercase tracking-wider text-gray-500 mb-1">Stop Loss</p>
-                          <p class="text-sm text-gray-300">{{ trade.stop_loss ? Number(trade.stop_loss).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}</p>
+                          <p class="text-sm text-gray-300">{{ trade.stop_loss ? Number(trade.stop_loss).toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}</p>
                         </div>
 
                         <!-- Take profit -->
                         <div>
                           <p class="text-xs font-medium uppercase tracking-wider text-gray-500 mb-1">Take Profit</p>
-                          <p class="text-sm text-gray-300">{{ trade.take_profit ? Number(trade.take_profit).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}</p>
+                          <p class="text-sm text-gray-300">{{ trade.take_profit ? Number(trade.take_profit).toLocaleString('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 5 }) : '—' }}</p>
                         </div>
 
                         <!-- Confidence -->
@@ -545,7 +545,7 @@ function debouncedSearch(event) {
 // ── Helpers ────────────────────────────────────────────────
 function formatPnl(value) {
   const n = Number(value)
-  const formatted = n.toLocaleString('fr-FR', {
+  const formatted = n.toLocaleString('fr-CA', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
@@ -555,7 +555,7 @@ function formatPnl(value) {
 function formatDate(dateStr) {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
-  return d.toLocaleDateString('fr-FR', {
+  return d.toLocaleDateString('fr-CA', {
     day: '2-digit',
     month: 'short',
   })
@@ -564,7 +564,7 @@ function formatDate(dateStr) {
 function formatDateTime(dateStr) {
   if (!dateStr) return '—'
   const d = new Date(dateStr)
-  return d.toLocaleDateString('fr-FR', {
+  return d.toLocaleDateString('fr-CA', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

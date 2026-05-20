@@ -87,20 +87,49 @@ const selectedPair = ref('EUR_USD');
 /*  Price auto-refresh                                                 */
 /* ------------------------------------------------------------------ */
 
-const refreshing = ref(false);
+const livePrices = ref({});
+const liveAccount = ref({ balance: '—', pl: 0, trades: 0 });
+const lastRefresh = ref(null);
+
+// Merge API data into reactive refs, fall back to props on first load
+function mergePrices() {
+    Object.assign(livePrices.value, props.prices);
+    Object.assign(liveAccount.value, props.accountBalance);
+}
+mergePrices();
+doRefresh();
+
 let refreshInterval = null;
 
+// Manual refresh button function
+async function doRefresh() {
+    refreshing.value = true;
+    try {
+        const res = await fetch('/api/trading/refresh');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.prices) Object.assign(livePrices.value, data.prices);
+            if (data.accountBalance) Object.assign(liveAccount.value, data.accountBalance);
+            lastRefresh.value = new Date().toLocaleTimeString('fr-CA', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+        }
+    } catch(e) {}
+    refreshing.value = false;
+}
+
 function startAutoRefresh() {
-    refreshInterval = setInterval(() => {
+    refreshInterval = setInterval(async () => {
         refreshing.value = true;
-        router.reload({
-            only: ['prices', 'accountBalance'],
-            onSuccess: () => { refreshing.value = false; },
-            onError: () => { refreshing.value = false; },
-            preserveScroll: true,
-            preserveState: true,
-        });
-    }, 15000);
+        try {
+            const res = await fetch('/api/trading/refresh');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.prices) Object.assign(livePrices.value, data.prices);
+                if (data.accountBalance) Object.assign(liveAccount.value, data.accountBalance);
+                lastRefresh.value = new Date().toLocaleTimeString('fr-CA', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            }
+        } catch(e) { /* silent fail */ }
+        refreshing.value = false;
+    }, 10000);
 }
 
 onMounted(() => {
@@ -227,15 +256,15 @@ watch(selectedPair, (pair) => {
 /* ------------------------------------------------------------------ */
 
 function priceBid(pair) {
-    return props.prices?.[pair]?.bid ?? '—';
+    return (livePrices.value || {})[pair]?.bid ?? props.prices?.[pair]?.bid ?? '—';
 }
 
 function priceAsk(pair) {
-    return props.prices?.[pair]?.ask ?? '—';
+    return (livePrices.value || {})[pair]?.ask ?? props.prices?.[pair]?.ask ?? '—';
 }
 
 function priceSpread(pair) {
-    return props.prices?.[pair]?.spread ?? '—';
+    return (livePrices.value || {})[pair]?.spread ?? props.prices?.[pair]?.spread ?? '—';
 }
 
 function priceChange(pair) {
@@ -260,9 +289,10 @@ function priceTrend(pair) {
 /* ------------------------------------------------------------------ */
 
 const accountCards = computed(() => {
-    const bal = Number(props.accountBalance?.balance) || 0;
-    const pl = Number(props.accountBalance?.pl) || 0;
-    const openCount = props.accountBalance?.trades ?? props.openTrades?.length ?? 0;
+    const la = liveAccount.value;
+    const bal = Number(la.balance || props.accountBalance?.balance) || 0;
+    const pl = Number(la.pl || props.accountBalance?.pl) || 0;
+    const openCount = la.trades ?? props.accountBalance?.trades ?? props.openTrades?.length ?? 0;
     const nav = bal + pl;
     return [
         { label: 'Solde du compte', value: `$${fmtNum(bal)}`, sub: 'USD', icon: '💰', color: 'text-blue-400' },
@@ -426,7 +456,7 @@ const hasOpenTrades = computed(() => props.openTrades?.length > 0);
         </template>
 
         <!-- Override layout background to dark -->
-        <div class="bg-[#0d1117] py-6">
+        <div class="trading-page-bg bg-[#0d1117] py-6">
             <div class="mx-auto max-w-7xl space-y-5 px-4 sm:px-6 lg:px-8">
 
                 <!-- ============================================================ -->
@@ -461,20 +491,20 @@ const hasOpenTrades = computed(() => props.openTrades?.length > 0);
                         <h3 class="text-sm font-semibold text-gray-200">
                             💱 Cours en direct
                         </h3>
-                        <span class="text-[10px] text-gray-600">Auto‑rafraîchissement 15s</span>
+                        <span class="text-[10px] text-gray-600">⏱️ {{ lastRefresh || "Attente…" }} &middot; 10s</span> <button @click="doRefresh" class="ml-2 text-[10px] text-emerald-400 hover:text-emerald-300 underline">↻ Rafraîchir</button>
                     </div>
                     <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                         <div
                             v-for="pair in pairKeys"
                             :key="pair"
                             @click="selectedPair = pair"
-                            class="group cursor-pointer rounded-lg border p-3 transition-all"
+                            class="group cursor-pointer rounded-lg border p-2 transition-all"
                             :class="selectedPair === pair
                                 ? 'border-emerald-500/40 bg-emerald-500/5 shadow-sm shadow-emerald-500/10'
                                 : 'border-[#21262d] bg-[#0d1117] hover:border-[#30363d]'"
                         >
                             <div class="mb-1 flex items-center justify-between">
-                                <span class="text-xs font-medium text-gray-300">
+                                <span class="text-[11px] font-medium text-gray-300">
                                     {{ PAIR_ICONS[pair] }} {{ PAIR_NAMES[pair] }}
                                 </span>
                                 <!-- Trend arrow -->
@@ -487,11 +517,15 @@ const hasOpenTrades = computed(() => props.openTrades?.length > 0);
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </div>
-                            <p class="text-base font-bold tabular-nums text-gray-100">
-                                {{ priceBid(pair) !== '—' ? Number(priceBid(pair)).toFixed(5) : '—' }}
+                            <p class="text-sm font-bold tabular-nums text-gray-100">
+                                {{ priceBid(pair) !== '—' 
+    ? (pair.includes('JPY') 
+        ? Number(priceBid(pair)).toFixed(3) 
+        : Number(priceBid(pair)).toFixed(4)) 
+    : '—' }}
                             </p>
                             <div class="mt-1 flex justify-between text-[10px] text-gray-500">
-                                <span>A: {{ priceAsk(pair) !== '—' ? Number(priceAsk(pair)).toFixed(5) : '—' }}</span>
+                                <span>A: {{ priceAsk(pair) !== '—' ? (pair.includes('JPY') ? Number(priceAsk(pair)).toFixed(3) : Number(priceAsk(pair)).toFixed(4)) : '—' }}</span>
                                 <span>Spread: {{ priceSpread(pair) !== '—' ? (Number(priceSpread(pair)) * 10000).toFixed(1) + ' pips' : '—' }}</span>
                             </div>
                         </div>
@@ -769,7 +803,7 @@ const hasOpenTrades = computed(() => props.openTrades?.length > 0);
 }
 
 /* Prevent layout background from leaking */
-.bg-\[\#0d1117\] {
+.trading-page-bg {
     min-height: calc(100vh - 4rem);
 }
 </style>

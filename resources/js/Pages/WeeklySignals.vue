@@ -186,7 +186,7 @@ function submitForm() {
 
     formSubmitting.value = true;
 
-    router.post('/weekly-signals', form.value, {
+    router.post(route('signals.store'), form.value, {
         preserveScroll: true,
         preserveState: true,
         onSuccess: () => {
@@ -243,7 +243,7 @@ const weekDescription = computed(() => {
             </div>
         </template>
 
-        <div class="bg-[#0d1117] py-6">
+        <div class="trading-page-bg bg-[#0d1117] py-6">
             <div class="mx-auto max-w-7xl space-y-5 px-4 sm:px-6 lg:px-8">
 
                 <!-- ============================================================ -->
@@ -611,7 +611,7 @@ const weekDescription = computed(() => {
 </template>
 
 <style>
-.bg-\[\#0d1117\] {
+.trading-page-bg {
     min-height: calc(100vh - 4rem);
 }
 </style>

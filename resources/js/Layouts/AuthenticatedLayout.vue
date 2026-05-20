@@ -35,6 +35,15 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('stats')" :active="route().current('stats')">
                                     📈 Stats
                                 </NavLink>
+                                <NavLink :href="route('backtest.index')" :active="route().current('backtest.*')">
+                                    🧪 Backtest
+                                </NavLink>
+                                <NavLink :href="route('strategy.index')" :active="route().current('strategy.*')">
+                                    🧬 Strategy
+                                </NavLink>
+                                <NavLink :href="route('strategies.index')" :active="route().current('strategies.*')">
+                                    🏛️ Strategies
+                                </NavLink>
                             </div>
                         </div>
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
@@ -81,8 +90,23 @@ const showingNavigationDropdown = ref(false);
                     <ResponsiveNavLink :href="route('stats')" :active="route().current('stats')">
                         📈 Stats
                     </ResponsiveNavLink>
+                    <ResponsiveNavLink :href="route('backtest.index')" :active="route().current('backtest.*')">
+                        🧪 Backtest
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink :href="route('strategy.index')" :active="route().current('strategy.*')">
+                        🧬 Strategy
+                    </ResponsiveNavLink>
+                    <ResponsiveNavLink :href="route('strategies.index')" :active="route().current('strategies.*')">
+                        🏛️ Strategies
+                    </ResponsiveNavLink>
                 </div>
             </div>
+
+            <header v-if="$slots.header" class="border-b border-gray-800 bg-[#161b22] shadow-sm">
+                <div class="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+                    <slot name="header" />
+                </div>
+            </header>
 
             <main>
                 <slot />
