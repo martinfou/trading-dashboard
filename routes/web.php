@@ -33,6 +33,7 @@ Route::get('/api/deployments/{id}', [App\Http\Controllers\Api\DeploymentControll
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/strategies', [StrategyRegistryController::class, 'index'])->name('strategies.index');
+    Route::get('/mission-control', [App\Http\Controllers\MissionControlController::class, 'index'])->name('mission-control');
     Route::get('/health', [App\Http\Controllers\Api\HealthCheckController::class, 'status'])->name('health.index');
     Route::get('/backtest', [BacktestController::class, 'index'])->name('backtest.index');
     Route::get('/backtest/{strategy}', [BacktestController::class, 'show'])->name('backtest.show');
