@@ -17,6 +17,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/stats', [StatsController::class, 'index'])->name('stats');
     Route::get('/api/trading/prices', [TradingApiController::class, 'prices'])->name('api.trading.prices');
     Route::get('/api/trading/refresh', [TradingApiController::class, 'refresh'])->name('api.trading.refresh');
+
+// Strategy Lifecycle API (deploy.sh → Laravel)
+Route::post('/api/deployments', [App\Http\Controllers\Api\DeploymentController::class, 'store']);
+Route::post('/api/deployments/{id}/trades', [App\Http\Controllers\Api\DeploymentController::class, 'importTrades']);
+Route::post('/api/deployments/{id}/metrics', [App\Http\Controllers\Api\DeploymentController::class, 'updateMetrics']);
+Route::get('/api/strategies', [App\Http\Controllers\Api\DeploymentController::class, 'index']);
+Route::get('/api/strategies/{strategy}', [App\Http\Controllers\Api\DeploymentController::class, 'timeline']);
+Route::get('/api/deployments/{id}', [App\Http\Controllers\Api\DeploymentController::class, 'show']);
 });  // end auth group
 
 Route::middleware(['auth', 'verified'])->group(function () {
