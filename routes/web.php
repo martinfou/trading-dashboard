@@ -35,3 +35,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/signals', [App\Http\Controllers\WeeklySignalsController::class, 'index'])->name('signals');
     Route::post('/signals', [App\Http\Controllers\WeeklySignalsController::class, 'store'])->name('signals.store');
 });
+Route::get('/strategies', function () {
+    return view('strategies');
+})->middleware(['auth', 'verified'])->name('strategies');

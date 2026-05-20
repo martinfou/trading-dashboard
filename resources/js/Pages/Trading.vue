@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
@@ -240,13 +240,17 @@ function initChart() {
 
     const data = generateCandles(selectedPair.value);
     candleSeries.setData(data);
+    initStrategyFilters(selectedPair.value);
+    updateMarkers();
     chartInstance.timeScale().fitContent();
 }
 
 watch(selectedPair, (pair) => {
+    initStrategyFilters(pair);
     if (candleSeries) {
         const data = generateCandles(pair);
         candleSeries.setData(data);
+        updateMarkers();
         chartInstance.timeScale().fitContent();
     }
 });
@@ -432,6 +436,133 @@ function statusBadge(status) {
 /* ------------------------------------------------------------------ */
 
 const hasOpenTrades = computed(() => props.openTrades?.length > 0);
+
+/* ------------------------------------------------------------------ */
+/*  Strategy Trades — simulated markers on chart                       */
+/* ------------------------------------------------------------------ */
+
+const STRATEGY_COLORS = {
+    TR: '#3b82f6',
+    MR: '#22c55e',
+    BT: '#f97316',
+    MM: '#ef4444',
+    NW: '#a855f7',
+};
+
+const STRATEGY_LABELS = {
+    TR: 'Trend',
+    MR: 'MeanRev',
+    BT: 'Breakout',
+    MM: 'Momentum',
+    NW: 'News',
+};
+
+function getStrategyPrefix(strategy) {
+    return strategy.substring(0, 2);
+}
+
+function getStrategyColor(strategy) {
+    return STRATEGY_COLORS[getStrategyPrefix(strategy)] || '#6b7280';
+}
+
+function getStrategyLabel(strategy) {
+    return STRATEGY_LABELS[getStrategyPrefix(strategy)] || strategy;
+}
+
+function getStrategyDisplayName(strategy) {
+    const parts = strategy.split('-');
+    return `${STRATEGY_LABELS[parts[0]] || parts[0]} #${parts[parts.length - 1]}`;
+}
+
+function dateToTimestamp(dateStr) {
+    const d = new Date(dateStr + 'T12:00:00');
+    return Math.floor(d.getTime() / 1000);
+}
+
+const strategyTrades = {
+    EUR_USD: [
+        { strategy: 'TR-S-EU-L-042', time: '2026-05-18', entry: 1.1580, exit: 1.1620, side: 'BUY', pnl: 40 },
+        { strategy: 'MR-S-EU-B-120', time: '2026-05-17', entry: 1.1550, exit: 1.1530, side: 'SELL', pnl: 20 },
+        { strategy: 'BT-S-EU-L-007', time: '2026-05-16', entry: 1.1520, exit: 1.1580, side: 'BUY', pnl: 60 },
+    ],
+    GBP_USD: [
+        { strategy: 'NW-S-GB-S-003', time: '2026-05-19', entry: 1.3390, exit: 1.3340, side: 'SELL', pnl: 50 },
+        { strategy: 'TR-S-GB-L-015', time: '2026-05-18', entry: 1.2650, exit: 1.2720, side: 'BUY', pnl: 70 },
+        { strategy: 'MM-S-GB-B-009', time: '2026-05-17', entry: 1.2580, exit: 1.2560, side: 'SELL', pnl: 20 },
+    ],
+    USD_CAD: [
+        { strategy: 'BT-S-UC-L-011', time: '2026-05-19', entry: 1.3700, exit: 1.3770, side: 'BUY', pnl: 70 },
+        { strategy: 'MR-S-UC-B-004', time: '2026-05-18', entry: 1.3730, exit: 1.3690, side: 'SELL', pnl: 40 },
+        { strategy: 'TR-S-UC-L-018', time: '2026-05-17', entry: 1.3660, exit: 1.3710, side: 'BUY', pnl: 50 },
+    ],
+    AUD_USD: [
+        { strategy: 'MM-S-AU-L-006', time: '2026-05-18', entry: 0.6600, exit: 0.6650, side: 'BUY', pnl: 50 },
+        { strategy: 'NW-S-AU-B-002', time: '2026-05-17', entry: 0.6550, exit: 0.6530, side: 'SELL', pnl: 20 },
+    ],
+    GBP_JPY: [
+        { strategy: 'TR-S-GJ-L-022', time: '2026-05-19', entry: 190.800, exit: 192.100, side: 'BUY', pnl: 130 },
+        { strategy: 'BT-S-GJ-B-014', time: '2026-05-18', entry: 189.500, exit: 188.800, side: 'SELL', pnl: 70 },
+    ],
+    USD_CHF: [
+        { strategy: 'MR-S-UCH-B-005', time: '2026-05-18', entry: 0.8840, exit: 0.8800, side: 'SELL', pnl: 40 },
+        { strategy: 'NW-S-UCH-L-001', time: '2026-05-17', entry: 0.8780, exit: 0.8830, side: 'BUY', pnl: 50 },
+    ],
+};
+
+function tradeToMarkers(trade) {
+    const color = getStrategyColor(trade.strategy);
+    const shortName = getStrategyDisplayName(trade.strategy);
+    const time = dateToTimestamp(trade.time);
+    const entryLabel = trade.side === 'BUY' ? 'BUY' : 'SELL';
+
+    return [
+        {
+            time,
+            position: trade.side === 'BUY' ? 'belowBar' : 'aboveBar',
+            color,
+            shape: trade.side === 'BUY' ? 'arrowUp' : 'arrowDown',
+            text: `${shortName} ENTRY ${entryLabel} @${trade.entry}`,
+        },
+        {
+            time,
+            position: 'inBar',
+            color,
+            shape: 'cross',
+            text: `${shortName} EXIT @${trade.exit} | P&L: ${trade.pnl >= 0 ? '+' : ''}${trade.pnl}`,
+        },
+    ];
+}
+
+const showStrategyTrades = ref(true);
+const activeStrategies = reactive(new Set());
+
+function initStrategyFilters(pair) {
+    activeStrategies.clear();
+    const trades = strategyTrades[pair] || [];
+    trades.forEach(t => activeStrategies.add(t.strategy));
+}
+
+const currentPairTrades = computed(() => {
+    return (strategyTrades[selectedPair.value] || []).filter(t => activeStrategies.has(t.strategy));
+});
+
+function updateMarkers() {
+    if (!candleSeries) return;
+    if (!showStrategyTrades.value) {
+        candleSeries.setMarkers([]);
+        return;
+    }
+    const markers = currentPairTrades.value.map(t => tradeToMarkers(t)).flat();
+    candleSeries.setMarkers(markers);
+}
+
+function toggleStrategy(strategy) {
+    if (activeStrategies.has(strategy)) {
+        activeStrategies.delete(strategy);
+    } else {
+        activeStrategies.add(strategy);
+    }
+}
 </script>
 
 <template>
@@ -555,6 +686,54 @@ const hasOpenTrades = computed(() => props.openTrades?.length > 0);
                         </div>
                     </div>
                     <div id="trading-chart" class="h-[420px] w-full"></div>
+
+                    <!-- Strategy trades legend -->
+                    <div class="mt-3 border-t border-[#21262d] pt-3">
+                        <div class="mb-2 flex items-center justify-between">
+                            <label class="flex cursor-pointer items-center gap-1.5 text-[11px] text-gray-400">
+                                <input
+                                    type="checkbox"
+                                    v-model="showStrategyTrades"
+                                    class="h-3 w-3 rounded border-[#30363d] bg-[#0d1117] text-emerald-500 focus:ring-emerald-500/30 focus:ring-offset-0"
+                                />
+                                Afficher trades
+                            </label>
+                            <span class="text-[10px] text-gray-600">{{ currentPairTrades.length }} trade(s)</span>
+                        </div>
+                        <div v-if="currentPairTrades.length > 0 && showStrategyTrades" class="flex flex-wrap gap-2">
+                            <div
+                                v-for="trade in currentPairTrades"
+                                :key="trade.strategy"
+                                @click="toggleStrategy(trade.strategy)"
+                                class="flex cursor-pointer items-center gap-2 rounded-lg border border-[#21262d] bg-[#0d1117] px-2.5 py-1.5 text-[11px] transition hover:border-[#30363d]"
+                                :class="{ 'opacity-40': !activeStrategies.has(trade.strategy) }"
+                                :style="{ borderLeftColor: getStrategyColor(trade.strategy), borderLeftWidth: '3px' }"
+                            >
+                                <span
+                                    class="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                                    :style="{ backgroundColor: getStrategyColor(trade.strategy) }"
+                                ></span>
+                                <span class="font-medium text-gray-300">{{ getStrategyDisplayName(trade.strategy) }}</span>
+                                <span class="text-gray-500">{{ trade.side === 'BUY' ? '🟢' : '🔴' }}</span>
+                                <span class="tabular-nums text-gray-400">{{ trade.entry }} → {{ trade.exit }}</span>
+                                <span
+                                    class="tabular-nums font-semibold"
+                                    :class="trade.pnl >= 0 ? 'text-emerald-400' : 'text-red-400'"
+                                >
+                                    {{ trade.pnl >= 0 ? '+' : '' }}{{ trade.pnl }}
+                                </span>
+                            </div>
+                        </div>
+                        <p
+                            v-else-if="!showStrategyTrades"
+                            class="text-[11px] text-gray-600"
+                        >
+                            Marqueurs de stratégie masqués
+                        </p>
+                        <p v-else class="text-[11px] text-gray-600">
+                            Aucun trade de stratégie pour cette paire
+                        </p>
+                    </div>
                 </div>
 
                 <!-- ============================================================ -->
