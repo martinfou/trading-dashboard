@@ -28,3 +28,14 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 AGENTS.md
+
+# Sauvegardes de .env : contiennent de VRAIS secrets (APP_KEY, clés OANDA/AWS,
+# *_TOKEN). Un `git add -A` (runs cron, agents tiers) les commettrait dans
+# l'historique. Ajouté ici pour que ce soit visible dans le dépôt ; la même règle
+# est aussi fermée au niveau GLOBAL (~/.config/git/ignore) pour couvrir les autres
+# dépôts. Même fermeture que dans hermes-web le 2026-10-02.
+.env.bak*
+.env.*.bak*
+*.env.bak*
+*.bak-*
+
