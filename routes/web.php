@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\TradingApiController;
 use App\Http\Controllers\BacktestController;
 use App\Http\Controllers\StrategyGenController;
 use App\Http\Controllers\StrategyRegistryController;
+use App\Http\Controllers\BacktestCompareController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () { return auth()->check() ? redirect('/trading') : redirect('/login'); });
@@ -18,6 +19,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/api/trading/prices', [TradingApiController::class, 'prices'])->name('api.trading.prices');
     Route::get('/api/trading/refresh', [TradingApiController::class, 'refresh'])->name('api.trading.refresh');
 
+// Machine Health API (health check polling — pas d'auth, les machines n'ont pas de session)
+Route::post('/api/health/ping', [App\Http\Controllers\Api\HealthCheckController::class, 'ping']);
+Route::get('/api/health', [App\Http\Controllers\Api\HealthCheckController::class, 'status']);
+
 // Strategy Lifecycle API (deploy.sh → Laravel)
 Route::post('/api/deployments', [App\Http\Controllers\Api\DeploymentController::class, 'store']);
 Route::post('/api/deployments/{id}/trades', [App\Http\Controllers\Api\DeploymentController::class, 'importTrades']);
@@ -29,9 +34,13 @@ Route::get('/api/deployments/{id}', [App\Http\Controllers\Api\DeploymentControll
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/strategies', [StrategyRegistryController::class, 'index'])->name('strategies.index');
+    Route::get('/mission-control', [App\Http\Controllers\MissionControlController::class, 'index'])->name('mission-control');
+    Route::get('/health', [App\Http\Controllers\Api\HealthCheckController::class, 'status'])->name('health.index');
     Route::get('/backtest', [BacktestController::class, 'index'])->name('backtest.index');
     Route::get('/backtest/{strategy}', [BacktestController::class, 'show'])->name('backtest.show');
     Route::post('/backtest/run', [BacktestController::class, 'run'])->name('backtest.run');
+    Route::get('/backtest-compare', [BacktestCompareController::class, 'index'])->name('backtest.compare');
+    Route::post('/backtest-compare/run', [BacktestCompareController::class, 'run'])->name('backtest.compare.run');
     Route::get('/strategy', [StrategyGenController::class, 'index'])->name('strategy.index');
     Route::post('/strategy/generate', [StrategyGenController::class, 'generate'])->name('strategy.generate');
 });

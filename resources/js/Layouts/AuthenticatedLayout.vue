@@ -41,6 +41,9 @@ const showingNavigationDropdown = ref(false);
                                 <NavLink :href="route('strategy.index')" :active="route().current('strategy.*')">
                                     🧬 Strategy
                                 </NavLink>
+                                <NavLink :href="route('mission-control')" :active="route().current('mission-control')">
+                                    🚀 Mission Control
+                                </NavLink>
                                 <NavLink :href="route('strategies.index')" :active="route().current('strategies.*')">
                                     🏛️ Strategies
                                 </NavLink>
